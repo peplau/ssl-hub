@@ -24,38 +24,45 @@ namespace SSL.Controllers
                 var url = HttpUtility.UrlDecode(Request.QueryString[Request.QueryString.AllKeys.First()]);
                 if (string.IsNullOrEmpty(url))
                     return View("Index",new HomeModel($"Error decoding url: {Request.QueryString["u"]}"));
+
                 //var parsedUrl = new Uri(url);
 
                 // Request
                 var request = WebRequest.Create(url);
 
                 // Pass headers to the request
-                foreach (var key in System.Web.HttpContext.Current.Request.Headers.AllKeys)
-                {
-                    if (!WebHeaderCollection.IsRestricted(key))
-                        request.Headers.Add(key,System.Web.HttpContext.Current.Request.Headers[key]);
-                }
+                //foreach (var key in System.Web.HttpContext.Current.Request.Headers.AllKeys)
+                //{
+                //    if (!WebHeaderCollection.IsRestricted(key) && key!="Accept-Encoding")
+                //        request.Headers.Add(key,System.Web.HttpContext.Current.Request.Headers[key]);
+                //}
+                //request.Headers["Accept-Encoding"] = "gzip;q=0,deflate,sdch";
 
                 // Re-pass headers to our Response
                 var response = request.GetResponse();
                 foreach (var key in response.Headers.AllKeys)
                 {
-                    if (!WebHeaderCollection.IsRestricted(key))
-                        System.Web.HttpContext.Current.Response.Headers[key] = response.Headers[key];
-                    else
+                    switch (key)
                     {
-                        switch (key)
-                        {
-                            case "Connection":
-                                break;
-                            case "Content-Type":
-                                System.Web.HttpContext.Current.Response.ContentType = response.Headers[key];
-                                break;
-                            case "Content-Length":
-                                break;
-                            case "Date":
-                                break;
-                        }
+                        case "Content-Type":
+                            System.Web.HttpContext.Current.Response.ContentType = response.Headers[key];
+                            break;
+                        case "Content-Encoding":
+                            System.Web.HttpContext.Current.Response.Headers[key] = "identity";
+                            //identity
+                            break;
+                        case "Content-Disposition":
+                        case "Date":
+                        case "Expires":
+                            System.Web.HttpContext.Current.Response.Headers[key] = response.Headers[key];
+                            break;
+                        case "Set-Cookie":
+                        case "Connection":
+                        case "Content-Length":
+                            break;
+                        default:
+                            //System.Web.HttpContext.Current.Response.Headers[key] = response.Headers[key];
+                            break;
                     }
                 }
 
